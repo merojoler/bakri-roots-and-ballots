@@ -46,6 +46,7 @@ export type Database = {
           id: string
           is_elder: boolean
           notes: string | null
+          parent_id: string | null
           phone: string | null
           photo_url: string | null
           relation: string | null
@@ -58,6 +59,7 @@ export type Database = {
           id?: string
           is_elder?: boolean
           notes?: string | null
+          parent_id?: string | null
           phone?: string | null
           photo_url?: string | null
           relation?: string | null
@@ -70,12 +72,21 @@ export type Database = {
           id?: string
           is_elder?: boolean
           notes?: string | null
+          parent_id?: string | null
           phone?: string | null
           photo_url?: string | null
           relation?: string | null
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "members_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       settings: {
         Row: {
