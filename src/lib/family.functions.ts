@@ -50,7 +50,7 @@ const photoSchema = z
   .max(600_000, "الصورة كبيرة جداً")
   .refine((v) => v.startsWith("data:image/"), "صيغة صورة غير صالحة")
   .nullable()
-  .optional();
+  .default(null);
 
 /* ---------------- Public ---------------- */
 
@@ -71,10 +71,10 @@ export const getFamily = createServerFn({ method: "GET" }).handler(async () => {
 
 const memberInput = z.object({
   full_name: z.string().trim().min(2, "الاسم مطلوب").max(120),
-  father_name: z.string().trim().max(120).optional().nullable(),
-  relation: z.string().trim().max(80).optional().nullable(),
-  phone: z.string().trim().max(30).optional().nullable(),
-  notes: z.string().trim().max(1000).optional().nullable(),
+  father_name: z.string().trim().max(120).nullable().default(null),
+  relation: z.string().trim().max(80).nullable().default(null),
+  phone: z.string().trim().max(30).nullable().default(null),
+  notes: z.string().trim().max(1000).nullable().default(null),
   photo_url: photoSchema,
 });
 
@@ -203,7 +203,7 @@ export const adminSaveCandidate = createServerFn({ method: "POST" })
       .object({
         id: z.string().uuid().optional(),
         name: z.string().trim().min(2).max(120),
-        bio: z.string().trim().max(1000).optional().nullable(),
+        bio: z.string().trim().max(1000).nullable().default(null),
         photo_url: photoSchema,
       })
       .parse(d),
