@@ -14,7 +14,113 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      candidates: {
+        Row: {
+          bio: string | null
+          created_at: string
+          id: string
+          name: string
+          photo_url: string | null
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          photo_url?: string | null
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          photo_url?: string | null
+        }
+        Relationships: []
+      }
+      members: {
+        Row: {
+          created_at: string
+          father_name: string | null
+          full_name: string
+          id: string
+          is_elder: boolean
+          notes: string | null
+          phone: string | null
+          photo_url: string | null
+          relation: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          father_name?: string | null
+          full_name: string
+          id?: string
+          is_elder?: boolean
+          notes?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          relation?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          father_name?: string | null
+          full_name?: string
+          id?: string
+          is_elder?: boolean
+          notes?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          relation?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          key: string
+          value: string
+        }
+        Insert: {
+          key: string
+          value: string
+        }
+        Update: {
+          key?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      votes: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          id: string
+          voter_token: string
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          id?: string
+          voter_token: string
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          id?: string
+          voter_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votes_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
