@@ -145,3 +145,15 @@
   background-clip: text;
   color: transparent;
 }
+
+@keyframes marquee-rtl {
+  from { transform: translateX(0); }
+  to { transform: translateX(50%); }
+}
+@utility animate-marquee {
+  animation: marquee-rtl var(--marquee-duration, 30s) linear infinite;
+  &:hover { animation-play-state: paused; }
+}
+@utility mask-fade-x {
+  mask-image: linear-gradient(to left, transparent, #000 10%, #000 90%, transparent);
+}
