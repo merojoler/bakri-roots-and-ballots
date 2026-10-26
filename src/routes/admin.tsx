@@ -241,8 +241,8 @@ function MemberEditor({ initial, onClose, onSaved }: { initial: Partial<Member>;
             onSaved(); onClose();
           } catch { setErr("تعذر الحفظ، تحقق من البيانات."); }
         }}>
-          <div className="space-y-1"><Label>الاسم الكامل</Label><Input value={m.full_name ?? ""} onChange={set("full_name")} required /></div>
-          <div className="space-y-1"><Label>اسم الأب / الجد</Label><Input value={m.father_name ?? ""} onChange={set("father_name")} /></div>
+          <div className="space-y-1"><Label>الاسم الرباعي الكامل</Label><Input value={m.full_name ?? ""} onChange={set("full_name")} required /></div>
+          <div className="space-y-1"><Label>اسم الأب (ثلاثي)</Label><Input value={m.father_name ?? ""} onChange={set("father_name")} /></div>
           <div className="space-y-1"><Label>صلة القرابة</Label><Input value={m.relation ?? ""} onChange={set("relation")} /></div>
           <div className="space-y-1"><Label>الهاتف</Label><Input value={m.phone ?? ""} onChange={set("phone")} dir="ltr" /></div>
           <div className="space-y-1"><Label>نبذة / ملاحظات</Label><Textarea value={m.notes ?? ""} onChange={set("notes")} /></div>

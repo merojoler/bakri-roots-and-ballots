@@ -13,6 +13,7 @@ export type Member = {
   is_elder: boolean;
   status: string;
   created_at: string;
+  parent_id: string | null;
 };
 
 export type CandidateResult = {
@@ -45,6 +46,31 @@ async function requireAdmin() {
   if (!session.data.admin) throw new Error("غير مصرح");
 }
 
+export function normName(v: string | null | undefined) {
+  return (v ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/[\u064B-\u0652]/g, "");
+}
+
+/** Link every member to the member whose full name exactly matches their father's name. */
+async function relinkTree() {
+  const supabase = await db();
+  const { data } = await supabase.from("members").select("id, full_name, father_name, parent_id, status");
+  const rows = data ?? [];
+  const byName = new Map<string, string>();
+  for (const r of rows) if (r.status === "approved") byName.set(normName(r.full_name), r.id);
+  await Promise.all(
+    rows.map((r) => {
+      const p = r.father_name ? byName.get(normName(r.father_name)) ?? null : null;
+      const parent = p === r.id ? null : p;
+      return parent === r.parent_id ? null : supabase.from("members").update({ parent_id: parent }).eq("id", r.id);
+    }),
+  );
+}
+
 const photoSchema = z
   .string()
   .max(600_000, "الصورة كبيرة جداً")
@@ -58,14 +84,14 @@ export const getFamily = createServerFn({ method: "GET" }).handler(async () => {
   const supabase = await db();
   const { data, error } = await supabase
     .from("members")
-    .select("id, full_name, father_name, relation, photo_url, notes, is_elder, created_at")
+    .select("id, full_name, father_name, relation, photo_url, notes, is_elder, created_at, parent_id")
     .eq("status", "approved")
     .order("created_at", { ascending: true });
   if (error) throw new Error(error.message);
   const rows = data ?? [];
   return {
     elders: rows.filter((m) => m.is_elder),
-    members: rows.filter((m) => !m.is_elder),
+    members: rows,
   };
 });
 
@@ -79,7 +105,14 @@ const memberInput = z.object({
 });
 
 export const submitMember = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => memberInput.parse(d))
+  .inputValidator((d: unknown) =>
+    memberInput
+      .extend({
+        full_name: z.string().trim().refine((v) => v.split(/\s+/).length >= 3, "أدخل الاسم الرباعي"),
+        father_name: z.string().trim().min(2, "اسم الأب مطلوب").max(120),
+      })
+      .parse(d),
+  )
   .handler(async ({ data }) => {
     const supabase = await db();
     const { error } = await supabase.from("members").insert({ ...data, status: "pending", is_elder: false });
@@ -169,6 +202,7 @@ export const adminSetStatus = createServerFn({ method: "POST" })
     const supabase = await db();
     const { error } = await supabase.from("members").update({ status: data.status }).eq("id", data.id);
     if (error) throw new Error(error.message);
+    await relinkTree();
     return { ok: true };
   });
 
@@ -184,6 +218,7 @@ export const adminSaveMember = createServerFn({ method: "POST" })
       ? await supabase.from("members").update(rest).eq("id", id)
       : await supabase.from("members").insert({ ...rest, status: "approved" });
     if (error) throw new Error(error.message);
+    await relinkTree();
     return { ok: true };
   });
 
@@ -194,6 +229,7 @@ export const adminDeleteMember = createServerFn({ method: "POST" })
     const supabase = await db();
     const { error } = await supabase.from("members").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    await relinkTree();
     return { ok: true };
   });
 
