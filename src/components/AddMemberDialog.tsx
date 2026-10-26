@@ -36,7 +36,7 @@ export function AddMemberDialog() {
       setDone(true);
       setPhoto(null);
     } catch {
-      setError("تعذر الإرسال، تأكد من إدخال الاسم الكامل وحاول مجدداً.");
+      setError("تعذر الإرسال، تأكد من إدخال الاسم الرباعي واسم الأب وحاول مجدداً.");
     } finally {
       setBusy(false);
     }
@@ -63,8 +63,8 @@ export function AddMemberDialog() {
           </div>
         ) : (
           <form onSubmit={onSubmit} className="space-y-4">
-            <Field label="الاسم الكامل *"><Input name="full_name" required minLength={2} /></Field>
-            <Field label="اسم الأب / الجد"><Input name="father_name" /></Field>
+            <Field label="الاسم الرباعي الكامل *"><Input name="full_name" required minLength={5} pattern="\S+(\s+\S+){2,}" title="اكتب الاسم الرباعي، مثال: أمير رائد محمد البكري" placeholder="مثال: أمير رائد محمد البكري" /></Field>
+            <Field label="اسم الأب الكامل *"><Input name="father_name" required minLength={5} placeholder="مثال: رائد محمد البكري" /><p className="text-xs text-muted-foreground">يُربط الاسم تلقائياً تحت الأب إذا كان مسجلاً بنفس الاسم.</p></Field>
             <Field label="صلة القرابة"><Input name="relation" placeholder="مثال: ابن، حفيد، زوجة..." /></Field>
             <Field label="الصورة الشخصية">
               <Input
