@@ -2,10 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Search, Crown, ChevronDown } from "lucide-react";
-import { getFamily, normName } from "@/lib/family.functions";
+import { getFamily } from "@/lib/family.functions";
+import { normName } from "@/lib/family-tree";
 import { SiteShell, Avatar } from "@/components/SiteShell";
 import { AddMemberDialog } from "@/components/AddMemberDialog";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { EldersStrip } from "@/components/EldersStrip";
 
 const familyQuery = queryOptions({ queryKey: ["family"], queryFn: () => getFamily(), staleTime: 60_000 });
 
@@ -44,7 +47,7 @@ function Home() {
     const byId = new Map(data.members.map((m) => [m.id, m]));
     const visible = new Set<string>();
     const hits = new Set<string>();
-    const addDesc = (id: string) => { visible.add(id); for (const c of children.get(id) ?? []) addDesc(c.id); };
+     const addDesc = (id: string) => { if (visible.has(id)) return; visible.add(id); for (const c of children.get(id) ?? []) addDesc(c.id); };
     for (const m of data.members) {
       if (!normName(m.full_name).includes(term)) continue;
       hits.add(m.id);
@@ -57,8 +60,6 @@ function Home() {
   }, [data.members, q]);
 
   const shownRoots = visible ? roots.filter((r) => visible.has(r.id)) : roots;
-  const elders = data.elders;
-  const loop = elders.length ? [...elders, ...elders] : [];
 
   return (
     <SiteShell>
@@ -70,29 +71,7 @@ function Home() {
           </div>
           <h1 className="font-display text-3xl md:text-4xl font-bold mt-3 text-gold-gradient">جذورنا الطيبة</h1>
         </div>
-        {elders.length > 0 && (
-          <div className="relative mask-fade-x overflow-hidden pb-8" dir="ltr">
-            <div
-              className="flex w-max gap-3 animate-marquee"
-              style={{ ["--marquee-duration" as string]: `${Math.max(18, elders.length * 5)}s` }}
-            >
-              {loop.map((e, i) => (
-                <article
-                  key={`${e.id}-${i}`}
-                  dir="rtl"
-                  className="group w-44 shrink-0 rounded-2xl border border-gold/30 bg-primary-foreground/5 backdrop-blur-md p-4 flex flex-col items-center transition-transform duration-300 hover:-translate-y-1 hover:border-gold hover:shadow-gold"
-                >
-                  <div className="relative">
-                    <div className="absolute -inset-1 rounded-full bg-gold-gradient opacity-40 blur-md group-hover:opacity-80 transition-opacity" />
-                    <div className="relative"><Avatar src={e.photo_url} name={e.full_name} /></div>
-                  </div>
-                  <h2 className="font-display text-base mt-3 font-bold leading-snug text-center line-clamp-2">{e.full_name}</h2>
-                  {e.relation && <span className="mt-1.5 text-[10px] rounded-full bg-gold/20 text-gold px-2 py-0.5">{e.relation}</span>}
-                </article>
-              ))}
-            </div>
-          </div>
-        )}
+        <EldersStrip elders={data.elders} />
       </section>
 
       <section className="mx-auto max-w-4xl px-4 py-8">
@@ -133,11 +112,11 @@ function Node({ m, children, visible, hits, depth }: {
   return (
     <li className="relative">
       <div
-        className={`relative flex items-center gap-3 rounded-xl border bg-card p-2.5 shadow-card ${hit ? "border-gold ring-2 ring-gold/40" : "border-border"} ${depth === 0 ? "border-r-4 border-r-gold" : ""}`}
+        className={`relative flex items-center gap-3 rounded-lg border bg-card p-2.5 shadow-card ${hit ? "border-gold ring-2 ring-gold/40" : "border-border"} ${depth === 0 ? "border-r-4 border-r-gold" : ""}`}
       >
         <Avatar src={m.photo_url} name={m.full_name} />
         <div className="min-w-0 flex-1">
-          <p className="font-bold leading-snug">{m.full_name}</p>
+          <p className="font-bold leading-snug break-words">{m.full_name}</p>
           <p className="text-xs text-muted-foreground">
             {m.is_elder ? <span className="text-gold-deep font-semibold">من كبار العائلة · </span> : depth === 0 && m.father_name ? "رأس فرع · " : ""}
             {m.relation ?? ""}
@@ -145,18 +124,15 @@ function Node({ m, children, visible, hits, depth }: {
           </p>
         </div>
         {kids.length > 0 && !visible && (
-          <button onClick={() => setOpen(!open)} aria-label="عرض الأبناء" className="rounded-full p-1.5 text-primary hover:bg-muted">
+          <Button variant="ghost" size="icon" onClick={() => setOpen(!open)} aria-label={`عرض أبناء ${m.full_name}`} aria-expanded={open} className="shrink-0 text-primary">
             <ChevronDown className={`size-5 transition-transform ${open ? "rotate-180" : ""}`} />
-          </button>
+          </Button>
         )}
       </div>
       {kids.length > 0 && expanded && (
-        <ul className="relative mr-6 mt-3 space-y-3 border-r-2 border-gold/50 pr-4">
+        <ul className="relative mr-2 sm:mr-5 mt-3 space-y-3 border-r-2 border-gold/50 pr-3 sm:pr-4">
           {kids.map((k) => (
-            <div key={k.id} className="relative">
-              <span className="absolute -right-4 top-7 h-0.5 w-4 bg-gold/50" />
-              <Node m={k} children={children} visible={visible} hits={hits} depth={depth + 1} />
-            </div>
+            <Node key={k.id} m={k} children={children} visible={visible} hits={hits} depth={depth + 1} />
           ))}
         </ul>
       )}
