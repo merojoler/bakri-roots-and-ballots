@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
-import { normName, resolveParents } from "./family-tree";
+import { resolveParents } from "./family-tree";
 export { normName } from "./family-tree";
 
 export type Member = {

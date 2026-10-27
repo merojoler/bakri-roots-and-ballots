@@ -111,6 +111,7 @@ function Node({ m, children, visible, hits, depth }: {
   const hit = hits.has(m.id);
   return (
     <li className="relative">
+      {depth > 0 && <span aria-hidden="true" className="absolute -right-3 sm:-right-4 top-7 h-0.5 w-3 sm:w-4 bg-gold/50" />}
       <div
         className={`relative flex items-center gap-3 rounded-lg border bg-card p-2.5 shadow-card ${hit ? "border-gold ring-2 ring-gold/40" : "border-border"} ${depth === 0 ? "border-r-4 border-r-gold" : ""}`}
       >
