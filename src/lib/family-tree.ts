@@ -1,7 +1,9 @@
 export function normName(value: string | null | undefined) {
   return (value ?? "").trim().replace(/\s+/g, " ").replace(/[أإآ]/g, "ا")
     .replace(/ى/g, "ي").replace(/[\u064B-\u0652\u0670]/g, "").replace(/ـ/g, "")
-    .replace(/^(الحاج|الحاجة|المرحوم|المرحومة)\s+/, "");
+    .replace(/^(الحاج|الحاجة|المرحوم|المرحومة)\s+/, "")
+    .replace(/\bعبد\s+/g, "عبد")
+    .replace(/(^|\s)عبد\s+(\S+)/g, "$1عبد$2");
 }
 
 type Linkable = { id: string; full_name: string; father_name: string | null; status?: string };

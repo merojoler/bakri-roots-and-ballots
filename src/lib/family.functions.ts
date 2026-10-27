@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
+import { normName, resolveParents } from "./family-tree";
+export { normName } from "./family-tree";
 
 export type Member = {
   id: string;
@@ -46,27 +48,19 @@ async function requireAdmin() {
   if (!session.data.admin) throw new Error("غير مصرح");
 }
 
-export function normName(v: string | null | undefined) {
-  return (v ?? "")
-    .trim()
-    .replace(/\s+/g, " ")
-    .replace(/[أإآ]/g, "ا")
-    .replace(/ى/g, "ي")
-    .replace(/[\u064B-\u0652]/g, "");
-}
-
-/** Link every member to the member whose full name exactly matches their father's name. */
+/** Re-evaluate all links after approval, editing or deletion, including children added first. */
 async function relinkTree() {
   const supabase = await db();
-  const { data } = await supabase.from("members").select("id, full_name, father_name, parent_id, status");
+  const { data, error } = await supabase.from("members").select("id, full_name, father_name, parent_id, status");
+  if (error) throw new Error(error.message);
   const rows = data ?? [];
-  const byName = new Map<string, string>();
-  for (const r of rows) if (r.status === "approved") byName.set(normName(r.full_name), r.id);
+  const parents = resolveParents(rows);
   await Promise.all(
-    rows.map((r) => {
-      const p = r.father_name ? byName.get(normName(r.father_name)) ?? null : null;
-      const parent = p === r.id ? null : p;
-      return parent === r.parent_id ? null : supabase.from("members").update({ parent_id: parent }).eq("id", r.id);
+    rows.map(async (r) => {
+      const parent = parents.get(r.id) ?? null;
+      if (parent === r.parent_id) return;
+      const { error } = await supabase.from("members").update({ parent_id: parent }).eq("id", r.id);
+      if (error) throw new Error(error.message);
     }),
   );
 }
@@ -88,7 +82,9 @@ export const getFamily = createServerFn({ method: "GET" }).handler(async () => {
     .eq("status", "approved")
     .order("created_at", { ascending: true });
   if (error) throw new Error(error.message);
-  const rows = data ?? [];
+  const approved = data ?? [];
+  const parents = resolveParents(approved);
+  const rows = approved.map((m) => ({ ...m, parent_id: parents.get(m.id) ?? null }));
   return {
     elders: rows.filter((m) => m.is_elder),
     members: rows,
@@ -108,14 +104,18 @@ export const submitMember = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     memberInput
       .extend({
-        full_name: z.string().trim().refine((v) => v.split(/\s+/).length >= 3, "أدخل الاسم الرباعي"),
+        full_name: z.string().trim().max(120).refine((v) => v.split(/\s+/).length >= 4, "أدخل الاسم الرباعي"),
         father_name: z.string().trim().min(2, "اسم الأب مطلوب").max(120),
       })
       .parse(d),
   )
   .handler(async ({ data }) => {
     const supabase = await db();
-    const { error } = await supabase.from("members").insert({ ...data, status: "pending", is_elder: false });
+    const { data: approved, error: readError } = await supabase.from("members").select("id, full_name, father_name, status").eq("status", "approved");
+    if (readError) throw new Error(readError.message);
+    const id = crypto.randomUUID();
+    const parent_id = resolveParents([...(approved ?? []), { ...data, id, status: "pending" }]).get(id) ?? null;
+    const { error } = await supabase.from("members").insert({ ...data, id, parent_id, status: "pending", is_elder: false });
     if (error) throw new Error(error.message);
     return { ok: true };
   });

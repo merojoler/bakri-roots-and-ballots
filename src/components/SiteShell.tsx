@@ -38,8 +38,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
   );
 }
 
-export function Avatar({ src, name, size = "md" }: { src?: string | null; name: string; size?: "md" | "lg" }) {
-  const cls = size === "lg" ? "size-28 text-4xl" : "size-14 text-xl";
+export function Avatar({ src, name, size = "md" }: { src?: string | null; name: string; size?: "sm" | "md" | "lg" }) {
+  const cls = size === "lg" ? "size-28 text-4xl" : size === "sm" ? "size-10 text-lg" : "size-14 text-xl";
   return src ? (
     <img src={src} alt={name} className={`${cls} rounded-full object-cover ring-2 ring-gold`} />
   ) : (

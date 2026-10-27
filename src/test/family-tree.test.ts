@@ -10,8 +10,8 @@ describe("family links", () => {
   it("links a three-part father name to a unique four-part name", () => {
     expect(resolveParents([dad, son]).get("son")).toBe("dad");
   });
-  it("also handles the existing compound grandfather name without guessing", () => {
-    expect(resolveParents([father, son]).get("son")).toBeNull();
+  it("handles عبد الرحمن as a compound name in the existing family", () => {
+    expect(resolveParents([father, son]).get("son")).toBe("father");
   });
   it("groups siblings beneath their shared father", () => {
     const brother = { ...son, id: "brother", full_name: "عمر رائد محمد البكري" };

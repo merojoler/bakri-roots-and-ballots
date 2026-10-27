@@ -13,3 +13,6 @@
 - Admin auth is a shared-password gate (ADMIN_PASSWORD secret + encrypted session cookie via SESSION_SECRET); every admin server fn calls requireAdmin() first.
 - Photos are stored as compressed JPEG data URLs in the row (workspace blocks public buckets).
 - One vote per browser: random token in localStorage + UNIQUE(voter_token) in votes.
+- Family linking uses the shared pure resolver in src/lib/family-tree.ts for reads and writes; unique normalized exact matches precede shortened-name matches, and cycles are rejected to prevent lost or incorrect branches.
+- The elders strip repeats a viewport-sized sequence twice with identical animation periods so resizing and additions cannot introduce blank seams.
+- Use the existing Nitro preset override only when VERCEL=1; preserve the managed default target to keep Lovable publishing operational.
