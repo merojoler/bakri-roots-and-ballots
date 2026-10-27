@@ -146,13 +146,19 @@
   color: transparent;
 }
 
-@keyframes marquee-rtl {
-  from { transform: translateX(0); }
-  to { transform: translateX(50%); }
-}
-@utility animate-marquee {
-  animation: marquee-rtl var(--marquee-duration, 30s) linear infinite;
-  &:hover { animation-play-state: paused; }
+.elders-viewport { overflow: hidden; }
+.elders-track { display: flex; width: max-content; }
+.elders-sequence { display: flex; flex-shrink: 0; gap: 12px; padding-right: 12px; }
+.elder-tile { width: 160px; min-height: 128px; flex-shrink: 0; }
+.elders-moving .elders-sequence { animation: elders-loop 30s linear infinite; will-change: transform; }
+.elders-static { width: 100%; justify-content: center; }
+.elders-static .elders-sequence { flex-wrap: wrap; justify-content: center; }
+@keyframes elders-loop { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+@media (prefers-reduced-motion: reduce) {
+  .elders-viewport { overflow-x: auto; }
+  .elders-moving .elders-sequence { animation: none; will-change: auto; }
+  .elders-sequence[aria-hidden="true"] { display: none; }
+  .elder-tile[aria-hidden="true"] { display: none; }
 }
 @utility mask-fade-x {
   mask-image: linear-gradient(to left, transparent, #000 10%, #000 90%, transparent);
