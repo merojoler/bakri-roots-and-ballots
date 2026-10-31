@@ -16,3 +16,4 @@
 - Family linking uses the shared pure resolver in src/lib/family-tree.ts for reads and writes; unique normalized exact matches precede shortened-name matches, and cycles are rejected to prevent lost or incorrect branches.
 - The elders strip repeats a viewport-sized sequence twice with identical animation periods so resizing and additions cannot introduce blank seams.
 - Use the existing Nitro preset override only when VERCEL=1; preserve the managed default target to keep Lovable publishing operational.
+- The server-only family database factory uses external credentials only on Vercel and maps family requests to isolated public.bakri_* tables; this preserves managed Cloud and unrelated external data.

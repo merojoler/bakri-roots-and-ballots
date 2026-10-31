@@ -39,8 +39,8 @@ function sessionConfig() {
 }
 
 async function db() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return supabaseAdmin;
+  const { getFamilyDatabase } = await import("./family-database.server");
+  return getFamilyDatabase();
 }
 
 async function requireAdmin() {
