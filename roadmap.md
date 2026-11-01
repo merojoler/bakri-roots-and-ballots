@@ -1,4 +1,6 @@
 # Tasks
+- [ ] Create downloadable vanilla HTML/CSS/JavaScript copy with a Node server and durable file storage, preserving current UI and rules.
+- [ ] Test standalone approval, linking, voting, admin protections, persistence and responsive views; package clean source.
 - [x] Correct automatic father matching and connected branches, including existing members.
 - [x] Make the elders strip continuous and adaptive without gaps.
 - [x] Prepare own-database setup and Vercel deployment instructions/configuration.
