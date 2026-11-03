@@ -1,6 +1,6 @@
 import http from 'node:http';
 import {readFile} from 'node:fs/promises';
-import {createHmac,randomUUID,scryptSync,timingSafeEqual} from 'node:crypto';
+import {createHmac,randomUUID,scryptSync,timingSafeEqual,randomBytes} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {Store,publicFamily,voting} from './lib/store.js';
@@ -14,7 +14,19 @@ const find=(rows,key)=>rows.find(r=>r.id===key)||fail('السجل غير موج�
 const stamp=()=>new Date().toISOString();
 async function body(req){let size=0;const parts=[];for await(const chunk of req){size+=chunk.length;if(size>700000)fail('الطلب كبير جدًا',413);parts.push(chunk);}try{const b=JSON.parse(Buffer.concat(parts).toString());if(!b||Array.isArray(b)||typeof b!=='object')fail();return b;}catch{fail();}}
 export async function createServer({dir=path.resolve(process.env.DATA_DIR||'data'),config,production=process.env.NODE_ENV==='production'}={}){
- config ||= JSON.parse(await readFile(path.join(dir,'config.json'),'utf8'));if(!config.salt||!config.passwordHash||!config.sessionSecret)throw Error('Run npm run setup first.');
+ if(!config){
+  try { config=JSON.parse(await readFile(path.join(dir,'config.json'),'utf8')); }
+  catch(e){
+   if(e.code!=='ENOENT') throw e;
+   const password=process.env.ADMIN_PASSWORD||'';
+   const sessionSecret=process.env.SESSION_SECRET||'';
+   if(password.length<12) throw Error('Set ADMIN_PASSWORD in the hosting environment (at least 12 characters).');
+   if(sessionSecret.length<32) throw Error('Set SESSION_SECRET in the hosting environment (at least 32 characters).');
+   const salt=randomBytes(16).toString('hex');
+   config={salt,passwordHash:scryptSync(password,salt,64).toString('hex'),sessionSecret};
+  }
+ }
+ if(!config.salt||!config.passwordHash||!config.sessionSecret)throw Error('Invalid admin configuration.');
  const store=new Store(dir);await store.init();const limits=new Map();
  function limit(req,key,n,ms){const ip=req.socket.remoteAddress;const name=ip+key;const t=Date.now();const v=limits.get(name);if(!v||v.until<t)limits.set(name,{count:1,until:t+ms});else if(++v.count>n)fail('طلبات كثيرة؛ حاول لاحقًا',429);if(limits.size>10000)for(const[k,v]of limits)if(v.until<t)limits.delete(k);}
  const sign=v=>createHmac('sha256',config.sessionSecret).update(v).digest('base64url');
@@ -50,4 +62,4 @@ export async function createServer({dir=path.resolve(process.env.DATA_DIR||'data
   }catch(e){json({error:e.status?e.message:'تعذر تنفيذ الطلب؛ حاول مجددًا'},e.status||500);}
  });return {server,store};
 }
-if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){const {server,store}=await createServer();server.listen(Number(process.env.PORT||3000),process.env.HOST||'127.0.0.1',()=>console.log('موقع البكري جاهز.'));for(const s of ['SIGINT','SIGTERM'])process.on(s,()=>server.close(async()=>{await store.close();process.exit(0);}));}
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){const {server,store}=await createServer();server.listen(Number(process.env.PORT||3000),process.env.HOST||'0.0.0.0',()=>console.log('موقع البكري جاهز.'));for(const s of ['SIGINT','SIGTERM'])process.on(s,()=>server.close(async()=>{await store.close();process.exit(0);}));}
