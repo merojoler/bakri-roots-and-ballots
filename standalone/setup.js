@@ -1,0 +1,11 @@
+import {randomBytes,scryptSync} from 'node:crypto';
+import {mkdir,writeFile} from 'node:fs/promises';
+import path from 'node:path';
+console.log('اختر كلمة مرور الإدارة (12 حرفًا على الأقل). لن تظهر أثناء الكتابة.');
+if(!process.stdin.isTTY)throw Error('Run setup in an interactive terminal.');
+process.stdin.setRawMode(true);process.stdin.resume();
+const password=await new Promise(resolve=>{let v='';process.stdin.on('data',function handler(buf){for(const c of buf.toString()){if(c==='\u0003')process.exit(1);if(c==='\r'||c==='\n'){process.stdin.removeListener('data',handler);process.stdin.setRawMode(false);process.stdin.pause();resolve(v);return;}if(c==='\u007f')v=v.slice(0,-1);else v+=c;}});});
+if(password.length<12)throw Error('كلمة المرور قصيرة؛ أعد تشغيل الإعداد.');
+const dir=path.resolve(process.env.DATA_DIR||'data');await mkdir(dir,{recursive:true,mode:0o700});const salt=randomBytes(16).toString('hex');
+await writeFile(path.join(dir,'config.json'),JSON.stringify({salt,passwordHash:scryptSync(password,salt,64).toString('hex'),sessionSecret:randomBytes(48).toString('hex')}),{mode:0o600,flag:'wx'});
+console.log('\nتم الإعداد. شغّل npm start');
